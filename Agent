@@ -1,0 +1,72 @@
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+public class Agent {
+
+	private Portfolio portfolio;
+	private ArrayList <Stock> market;
+	private Map<Stock, String> plannedActions;
+	private Map<Stock, ArrayList<Double>> priceHistory;
+	
+	public Agent(Portfolio portfolio, ArrayList<Stock> market) {
+		this.portfolio = portfolio;
+		this.market = market;
+		priceHistory = new HashMap<>();
+		plannedActions = new HashMap<>();
+	}
+	
+	
+	public void observeMarket(ArrayList<Stock> stockMarket) { // Save price history
+		for (Stock s: stockMarket) {
+			ArrayList<Double> prices = priceHistory.get(s);
+			prices.add(s.getPrice());
+			priceHistory.put(s, prices);
+		}		
+	}
+	
+	
+	public void makeDecision(Stock s) { // Buy low, sell high
+		double sum = 0;
+		double currentPrice = 0;
+		double avg = 0;
+		int numPrices = priceHistory.get(s).size();
+		if (numPrices > 5) {
+			for (int i = numPrices-5; i < numPrices; i++) {   // get average of last 3 prices
+				double p = priceHistory.get(s).get(i);
+				sum += p;
+				currentPrice = p;
+			}
+			avg = sum/5;
+		}
+		else {
+			for (int i = 0; i < numPrices; i++) {   // get average of last 3 prices
+				double p = priceHistory.get(s).get(i);
+				sum += p;
+				currentPrice = p;
+			}
+			avg = sum/numPrices;
+		}
+		
+		if (currentPrice < (avg * 0.95)) {  // under valued
+			plannedActions.put(s, "BUY");
+		}
+		else if (currentPrice > (avg * 1.05)) {  // over valued
+			plannedActions.put(s, "SELL");
+		}
+		else {
+			plannedActions.put(s, "HOLD");
+		}
+	}
+		
+	
+	public void decideAndAct(ArrayList<Stock> stockMarket) {
+		for (Stock s: market) {
+			if (plannedActions.get(s).equals("BUY")) {
+				int quant = 0;
+				portfolio.buyStock(s, quant);
+			}
+		}
+	}
+
+}
