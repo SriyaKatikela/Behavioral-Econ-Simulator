@@ -1,0 +1,40 @@
+import java.util.Random;
+
+public class Stock {
+	private String name;
+	private double price;
+	private double fluctuation;  // % range per day
+	private Random rand;
+	
+	public Stock(String n, double startingPrice, double volatility) {
+		name = n;
+		price = startingPrice;
+		fluctuation = volatility;
+		rand = new Random();
+	}
+	
+	public String getName() {
+		return name;
+	}
+
+	public double getPrice() {
+		return price;
+	}
+
+	public void updatePrice() {  // randomly change price based on fluctation
+		int randomNum = rand.nextInt(0, 2);
+		boolean up = false;
+		if (randomNum == 0) {
+			up = true;
+		}
+		
+		if (up) {
+			price += price*fluctuation;
+		}
+		else {
+			price -= price*fluctuation;
+		}
+		
+	}
+	
+}
