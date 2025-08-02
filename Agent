@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class Agent {
 
@@ -8,12 +9,29 @@ public class Agent {
 	private ArrayList <Stock> market;
 	private Map<Stock, String> plannedActions;
 	private Map<Stock, ArrayList<Double>> priceHistory;
+	private Map<Stock, Double> confidence;  // rational confidence for each stock based on its perfomance
+	
+	// Behavioral AI traits
+	private double riskTolerance;  // 0.0 (safe) to 1.0 (bold); skip if trend is not strong enough
+	private double lossAversionFactor;  // >1 (losses weigh more than gains); <1 (gains weigh more than losses)
+	private double herdBehaviorBias;  // 0 (independent) to 1 (copies crowd)
+	private double overConfidenceBias;  // 0 (humble) to 1 (cocky)
+	private double emotionalNoiseLevel;  // range of randomness
+	
 	
 	public Agent(Portfolio portfolio, ArrayList<Stock> market) {
 		this.portfolio = portfolio;
 		this.market = market;
 		priceHistory = new HashMap<>();
 		plannedActions = new HashMap<>();
+		confidence = new HashMap<>();
+		
+		// Behavioral traits
+		riskTolerance = Math.random();  // 0.2 to 0.8
+		lossAversionFactor = 1.2 + 0.8 * Math.random();  // 1.2 to 2.0
+		herdBehaviorBias = 0.5 * Math.random();  // 0 to 0.5
+		overConfidenceBias = 0.5 * Math.random();  // 0 to 0.5
+		emotionalNoiseLevel = 0.5 + 0.1 * Math.random();  // 0.5 to 0.15
 	}
 	
 	
@@ -28,16 +46,15 @@ public class Agent {
 	
 	public void makeDecision(Stock s) { // Buy low, sell high
 		double sum = 0;
-		double currentPrice = 0;
-		double avg = 0;
 		int numPrices = priceHistory.get(s).size();
+		double currentPrice = 0;
+		
 		if (numPrices > 5) {
 			for (int i = numPrices-5; i < numPrices; i++) {   // get average of last 3 prices
 				double p = priceHistory.get(s).get(i);
 				sum += p;
 				currentPrice = p;
 			}
-			avg = sum/5;
 		}
 		else {
 			for (int i = 0; i < numPrices; i++) {   // get average of last 3 prices
@@ -45,27 +62,77 @@ public class Agent {
 				sum += p;
 				currentPrice = p;
 			}
-			avg = sum/numPrices;
 		}
 		
-		if (currentPrice < (avg * 0.95)) {  // under valued
+		confidence.put(s, calculateBehavioralConfidence(s));
+		
+		if (confidence.get(s) > 0.6) {
 			plannedActions.put(s, "BUY");
 		}
-		else if (currentPrice > (avg * 1.05)) {  // over valued
+		else if (confidence.get(s) < 0.4) {
 			plannedActions.put(s, "SELL");
 		}
 		else {
 			plannedActions.put(s, "HOLD");
 		}
+		
 	}
 		
 	
+	private double calculateBehavioralConfidence(Stock s) {
+		int numPrices = priceHistory.get(s).size();
+		double currentPrice = priceHistory.get(s).get(numPrices-1);
+		double previousPrice = priceHistory.get(s).get(numPrices-2);
+		double percentChange = (currentPrice - previousPrice) / previousPrice;
+		
+		double baseConfidence = percentChange * 10 + 0.5;
+		baseConfidence = Math.max(0,  Math.min(1,  baseConfidence));
+		
+		// Loss Aversion or Over confidence:
+		if (percentChange < 0) {
+			baseConfidence *= lossAversionFactor;
+		}
+		else {
+			baseConfidence *= (1 + overConfidenceBias);
+		}
+		
+		// Risk Tolerance (ignore small changes if low risk tolerance):
+		if (Math.abs(percentChange) < (0.01 + (1 - riskTolerance) * 0.05)) {
+			return 0.5 + randomNoise();
+		}
+		
+		// Herd Influence:
+		double herdSentiment = getFakeMarketSentiment(s);
+		baseConfidence += herdSentiment * herdBehaviorBias;
+		
+		baseConfidence += randomNoise();
+		
+		return Math.max(0, Math.min(1, baseConfidence));
+	}
+
+
+	private double getFakeMarketSentiment(Stock s) {
+		return Math.random() * 2 - 1;  // range -1 to 1
+	}
+
+
+	private double randomNoise() {
+		return (Math.random() * 2 -1) * emotionalNoiseLevel;
+	}
+
+
 	public void decideAndAct(ArrayList<Stock> stockMarket) {
 		for (Stock s: market) {
+			makeDecision(s);
+			int maxStocks = (int) (portfolio.getCashBalance() / s.getPrice());
+			int quant = (int)(maxStocks * confidence.get(s) * riskTolerance);
 			if (plannedActions.get(s).equals("BUY")) {
-				int quant = 0;
 				portfolio.buyStock(s, quant);
 			}
+			else if (plannedActions.get(s).equals("SELL")) {
+				portfolio.sellStock(s, quant);
+			}
+			
 		}
 	}
 
