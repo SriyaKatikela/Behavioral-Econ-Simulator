@@ -5,10 +5,11 @@ import java.util.Random;
 
 public class Agent {
 
+	private String name;
 	private Portfolio portfolio;
 	private ArrayList <Stock> market;
 	private Map<Stock, String> plannedActions;
-	private Map<Stock, ArrayList<Double>> priceHistory;
+//	private Map<Stock, ArrayList<Double>> priceHistory;
 	private Map<Stock, Double> confidence;  // rational confidence for each stock based on its perfomance
 	
 	// Behavioral AI traits
@@ -18,11 +19,12 @@ public class Agent {
 	private double overConfidenceBias;  // 0 (humble) to 1 (cocky)
 	private double emotionalNoiseLevel;  // range of randomness
 	
-	
-	public Agent(Portfolio portfolio, ArrayList<Stock> market) {
+
+	public Agent(String name, Portfolio portfolio, ArrayList<Stock> market) {
+		this.name = name;
 		this.portfolio = portfolio;
 		this.market = market;
-		priceHistory = new HashMap<>();
+//		priceHistory = new HashMap<>();
 		plannedActions = new HashMap<>();
 		confidence = new HashMap<>();
 		
@@ -32,35 +34,29 @@ public class Agent {
 		herdBehaviorBias = 0.5 * Math.random();  // 0 to 0.5
 		overConfidenceBias = 0.5 * Math.random();  // 0 to 0.5
 		emotionalNoiseLevel = 0.5 + 0.1 * Math.random();  // 0.5 to 0.15
+	}	
+	
+	public Portfolio getPortfolio() {
+		return portfolio;
 	}
+
 	
-	
-	public void observeMarket(ArrayList<Stock> stockMarket) { // Save price history
-		for (Stock s: stockMarket) {
-			ArrayList<Double> prices = priceHistory.get(s);
-			prices.add(s.getPrice());
-			priceHistory.put(s, prices);
-		}		
+	public String getName() {
+		return name;
 	}
 	
 	
 	public void makeDecision(Stock s) { // Buy low, sell high
-		double sum = 0;
-		int numPrices = priceHistory.get(s).size();
-		double currentPrice = 0;
+		int numPrices = s.getPriceHistory().size();
 		
 		if (numPrices > 5) {
 			for (int i = numPrices-5; i < numPrices; i++) {   // get average of last 3 prices
-				double p = priceHistory.get(s).get(i);
-				sum += p;
-				currentPrice = p;
+				double p = s.getPriceHistory().get(i);
 			}
 		}
 		else {
 			for (int i = 0; i < numPrices; i++) {   // get average of last 3 prices
-				double p = priceHistory.get(s).get(i);
-				sum += p;
-				currentPrice = p;
+				double p = s.getPriceHistory().get(i);
 			}
 		}
 		
@@ -80,10 +76,7 @@ public class Agent {
 		
 	
 	private double calculateBehavioralConfidence(Stock s) {
-		int numPrices = priceHistory.get(s).size();
-		double currentPrice = priceHistory.get(s).get(numPrices-1);
-		double previousPrice = priceHistory.get(s).get(numPrices-2);
-		double percentChange = (currentPrice - previousPrice) / previousPrice;
+		double percentChange = s.getPercentChange();
 		
 		double baseConfidence = percentChange * 10 + 0.5;
 		baseConfidence = Math.max(0,  Math.min(1,  baseConfidence));
@@ -124,16 +117,56 @@ public class Agent {
 	public void decideAndAct(ArrayList<Stock> stockMarket) {
 		for (Stock s: market) {
 			makeDecision(s);
-			int maxStocks = (int) (portfolio.getCashBalance() / s.getPrice());
-			int quant = (int)(maxStocks * confidence.get(s) * riskTolerance);
-			if (plannedActions.get(s).equals("BUY")) {
-				portfolio.buyStock(s, quant);
+		
+			double currentPrice = s.getPrice();
+			double conf = confidence.get(s);
+			
+			String decision = plannedActions.get(s);
+			int quant = 0;
+			
+			switch (decision) {
+			case "BUY":
+				int affordable = (int)(portfolio.getCashBalance() / currentPrice);
+				
+				// Adjust quantity based on confidence, risk, and overconfidence
+				quant = (int)(affordable * conf * riskTolerance * (1 + overConfidenceBias));
+				
+				// Buy at least 1 if highly confident
+				if (conf > 0.85 && quant == 0 && affordable > 0) {
+					quant = 1;
+				}
+				
+				if (quant > 0) {
+					portfolio.buyStock(s, quant);
+				}
+				break;
+				
+			case "SELL":
+				int own = portfolio.getHoldings().getOrDefault(s, 0);
+				
+				// Adjust quantity based on inverse confidence and loss aversion
+				quant = (int)(own * (1 - conf) * lossAversionFactor * (1 + emotionalNoiseLevel));
+				
+				// Sell all if extremely low confidence
+				if (conf < 0.2 && own > 0) {
+					quant = own;
+				}
+				
+				// Cap quantity at what you own
+				quant = Math.min(quant, own);
+				
+				if (quant > 0) {
+					portfolio.sellStock(s, quant);
+				}
+				break;
+			
+			default:
+				// if action == HOLD
+				break;
 			}
-			else if (plannedActions.get(s).equals("SELL")) {
-				portfolio.sellStock(s, quant);
-			}
+			
+			// System.out.println("Agent decision: " + decision + " " + quant + " shares of " + s.getName());
 			
 		}
 	}
-
 }
