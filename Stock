@@ -1,3 +1,6 @@
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class Stock {
@@ -5,22 +8,46 @@ public class Stock {
 	private double price;
 	private double fluctuation;  // % range per day
 	private Random rand;
+	private ArrayList<Double> priceHistory;
 	
 	public Stock(String n, double startingPrice, double volatility) {
 		name = n;
-		price = startingPrice;
+		price = startingPrice;		
 		fluctuation = volatility;
 		rand = new Random();
+		priceHistory = new ArrayList<>();
+		priceHistory.add(price);
 	}
 	
 	public String getName() {
 		return name;
 	}
 
-	public double getPrice() {
-		return price;
+	@Override
+	public String toString() {
+		return name + "at $" + String.format("%.2f", price);
 	}
 
+	public ArrayList<Double> getPriceHistory() {
+		return priceHistory;
+	}
+
+	public double getPrice() {
+		// Round price to 2 decimal places
+		BigDecimal bd = new BigDecimal(Double.toString(price));
+		bd = bd.setScale(2, RoundingMode.HALF_UP);
+		price = bd.doubleValue();
+		return price;		
+	}
+
+	public double getFluctuation() {
+		// Round to 2 decimal places
+		BigDecimal bd = new BigDecimal(Double.toString(fluctuation));
+		bd = bd.setScale(2, RoundingMode.HALF_UP);
+		fluctuation = bd.doubleValue();
+		return fluctuation;
+	}
+	
 	public void updatePrice() {  // randomly change price based on fluctation
 		int randomNum = rand.nextInt(0, 2);
 		boolean up = false;
@@ -28,13 +55,24 @@ public class Stock {
 			up = true;
 		}
 		
-		if (up) {
-			price += price*fluctuation;
-		}
-		else {
-			price -= price*fluctuation;
-		}
+		double percentChange = fluctuation * (rand.nextDouble() * 2 - 1);  // Randomizes pos fluctuation to neg fluctuation
+		price *= (1 + percentChange);
+		priceHistory.add(price);
 		
+	}
+	
+	public double getPercentChange() {
+		if (priceHistory.size() < 2) {
+			return 0;
+		}
+		double previousPrice = priceHistory.get(priceHistory.size() - 2);
+		double change = (price - previousPrice) / previousPrice;
+		
+		// Round to 2 decimal places
+		BigDecimal bd = new BigDecimal(Double.toString(change));
+		bd = bd.setScale(2, RoundingMode.HALF_UP);
+		change = bd.doubleValue();
+		return change;
 	}
 	
 }
