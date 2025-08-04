@@ -1,0 +1,138 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
+public class Simulator {
+
+	private ArrayList<Stock> market;
+	private ArrayList<Agent> agents;
+	private int days;
+	private int currentDay;
+	private Map<Stock, ArrayList<Double>> stockPrices;
+	
+	public Simulator (int numDays, double minCash, double maxCash, int numAgents) {
+		market = new ArrayList<>();
+		loadStocksFromFile("src/stocks");
+		agents = new ArrayList<>();
+				
+		days = numDays;
+		for (int i = 0; i < numAgents; i++) {
+			double initialCash = minCash + (Math.random() * (maxCash-minCash));
+			initialCash = (Math.round(initialCash) * 100) / 100;  // rounds to 2 decimal places
+			Portfolio p = new Portfolio(initialCash);	
+			loadAgentsFromFile(p, "src/Names");
+		}
+		stockPrices = new HashMap<>();
+		for (Stock s: market) {
+			stockPrices.put(s, s.getPriceHistory());
+		}
+		currentDay = 1;
+	}
+	
+	/* Update all stock prices
+	 * Each agent observes the market
+	 * Each agent makes decisions and acts
+	 * Record state or performance for later analysis
+	 * Log key updates (market status, top-performing agent, etc)
+	 * 
+	 * Return when 1) Number of days are run, 2) Average confidence drops, or 3) A stock crashes
+	*/
+	public void runSim() {
+		for (int i = 0; i < days; i++) {
+			for (Stock s: market) {
+				s.updatePrice();
+			}
+			
+			for (Agent a: agents) {
+				a.decideAndAct(market);			
+			}
+			printMarketStatus(currentDay);
+			currentDay++;
+		}
+	}
+	
+	private void printMarketStatus(int numDay) {
+		ArrayList<Double> changes = new ArrayList<>();
+		
+		System.out.println("=== Market Status: Day " + numDay + " of " + days);
+		System.out.println();
+		System.out.println("STOCK     | PRICE     | Δ%     | VOL%");
+		System.out.println("----------------------------------------");
+		for (Stock s: market) {
+			String name = s.getName();
+			double price = s.getPrice();
+			double change = s.getPercentChange() * 100;
+			
+			BigDecimal bd = new BigDecimal(Double.toString(change));
+			bd = bd.setScale(2, RoundingMode.HALF_UP);
+			change = bd.doubleValue();
+			changes.add(change);
+			/* TODO: sort changes for Top Gains and Top Losses */
+			
+			String delta = "";
+			if (change > 0) {
+				delta += "+";				
+			}
+			delta += Double.toString(change);
+			double vol = s.getFluctuation();			
+			
+			System.out.println(name + "      | $" + price + "   | " + delta + "  | " + vol);
+			System.out.println();
+			System.out.println();
+		}
+		
+		System.out.println("Top Gains: ");
+		System.out.println("Top Losses: ");
+		
+		System.out.println();
+		System.out.println("AGENT SUMMARIES:");
+		
+		System.out.println();
+		System.out.println("Recent Actions:");
+		
+	}
+	
+	private void loadStocksFromFile (String filename) {
+		try {
+			Scanner fileScanner = new Scanner(new File(filename));
+			while (fileScanner.hasNextLine()) {
+				String line = fileScanner.nextLine();
+				String[] parts = line.split(",");
+				String name = parts[0];
+				double price = Double.parseDouble(parts[1]);
+				double fluctuation = Double.parseDouble(parts[2]);
+				
+				Stock stock = new Stock(name, price, fluctuation);
+				market.add(stock);
+			}
+			fileScanner.close();
+		}
+		catch (FileNotFoundException e) {
+			System.out.println("File not found.");
+		}
+	}
+	
+	private void loadAgentsFromFile (Portfolio p, String filename) {
+		String[] names = new String[50];
+		try {
+			Scanner fileScanner = new Scanner(new File(filename));
+			while (fileScanner.hasNextLine()) {
+				String line = fileScanner.nextLine();
+				names = line.split("\n");
+			}
+			fileScanner.close();
+		}
+		catch (FileNotFoundException e) {
+			System.out.println("File not found.");
+		}
+		for (int i = 0; i < agents.size(); i++) {
+			agents.add(new Agent(names[i], p, market));
+		}
+	}
+
+}
