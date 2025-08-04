@@ -4,6 +4,7 @@ import java.util.Map;
 public class Portfolio {
 
 	private double cashBalance;
+	
 	private Map<Stock, Integer> holdings;  // {AAPL: 5 shares}
 	
 	public Portfolio(double initialCash) {
@@ -11,6 +12,10 @@ public class Portfolio {
 		holdings = new HashMap<>();
 	}
 	
+	public Map<Stock, Integer> getHoldings() {
+		return holdings;
+	}
+
 	public boolean buyStock (Stock stock, int quant) {
 		int price = (int) (quant * stock.getPrice());
 		if (price > cashBalance) {
@@ -19,45 +24,53 @@ public class Portfolio {
 		}
 		else {
 			cashBalance -= price;
-			holdings.put(stock, quant);
+			int currentShares = holdings.getOrDefault(stock, 0);
+			holdings.put(stock, currentShares + quant);
 		}
 		return true;
 	}
 	
 	public boolean sellStock (Stock stock, int quant) {
-		if (holdings.get(stock) == quant) {
-			cashBalance += (int) (quant * stock.getPrice());
-			if (holdings.get(stock)-quant == 0) {
-				holdings.remove(stock);
-			}
-			else {
-				holdings.replace(stock, holdings.get(stock)-quant);
-			}
-		}
-		else {
+		if (!holdings.containsKey(stock) || holdings.get(stock) < quant) {
 			System.out.println("You don't own that number of shares");
 			return false;
+		}
+		
+		cashBalance += (int) (quant * stock.getPrice());
+		int remaining = holdings.get(stock) - quant;
+		if (remaining == 0) {
+			holdings.remove(stock);
+		}
+		else {
+			holdings.put(stock, remaining);
 		}
 		return true;
 	}
 	
 	public double getTotalValue() {  // output cash+value of stocks
-		double totalCash = cashBalance;
-		for (Stock shares: holdings.keySet()) {
-			totalCash += holdings.get(shares) * shares.getPrice();
+		double totalCash = getCashBalance();
+		for (Stock s: holdings.keySet()) {
+			double price = s.getPrice();
+			totalCash += holdings.get(s) * price;
+			totalCash = (Math.round(totalCash) * 100) / 100;
 		}
 		return totalCash;
 	}
 	
+	public double getCashBalance() {
+		return (Math.round(cashBalance) * 100) / 100;
+	}
+	
 	public void printSummary() {
 		for (Stock shares: holdings.keySet()) {
-			System.out.println(shares + ": " + holdings.get(shares));
+			System.out.println(shares.getName() + ": " + holdings.get(shares));
 		}
 		System.out.println();
 		System.out.println("Number of shares: " + holdings.size());
 		System.out.println("Value of shares: " + (getTotalValue()-cashBalance));
 		System.out.println("Total Value: " + getTotalValue());
 		System.out.println("Cash Balance: " + cashBalance);
+
 	}
 
 }
