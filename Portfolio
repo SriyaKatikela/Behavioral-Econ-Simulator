@@ -1,3 +1,6 @@
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,6 +17,14 @@ public class Portfolio {
 	
 	public Map<Stock, Integer> getHoldings() {
 		return holdings;
+	}
+	
+	public ArrayList<Stock> getOwnedStocks() {
+		ArrayList<Stock> stocks = new ArrayList<>();
+		for (Stock s: holdings.keySet()) {
+			stocks.add(s);
+		}
+		return stocks;
 	}
 
 	public boolean buyStock (Stock stock, int quant) {
@@ -51,14 +62,27 @@ public class Portfolio {
 		double totalCash = getCashBalance();
 		for (Stock s: holdings.keySet()) {
 			double price = s.getPrice();
-			totalCash += holdings.get(s) * price;
-			totalCash = (Math.round(totalCash) * 100) / 100;
+			totalCash += holdings.get(s) * price;			
 		}
+		BigDecimal bd = new BigDecimal(Double.toString(totalCash));
+		bd = bd.setScale(2, RoundingMode.HALF_UP);
+		totalCash = bd.doubleValue();
 		return totalCash;
 	}
 	
+	public double getPortfolioValue() {
+		double value = getTotalValue() - getCashBalance();
+		BigDecimal bd = new BigDecimal(Double.toString(value));
+		bd = bd.setScale(2, RoundingMode.HALF_UP);
+		value = bd.doubleValue();
+		return value;
+	}
+
 	public double getCashBalance() {
-		return (Math.round(cashBalance) * 100) / 100;
+		BigDecimal bd = new BigDecimal(Double.toString(cashBalance));
+		bd = bd.setScale(2, RoundingMode.HALF_UP);
+		cashBalance = bd.doubleValue();
+		return cashBalance;
 	}
 	
 	public void printSummary() {
