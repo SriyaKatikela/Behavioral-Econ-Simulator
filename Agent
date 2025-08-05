@@ -113,7 +113,12 @@ public class Agent {
 		return (Math.random() * 2 -1) * emotionalNoiseLevel;
 	}
 
+	
+	public Map<Stock, String> getPlannedActions() {
+		return plannedActions;
+	}
 
+	
 	public void decideAndAct(ArrayList<Stock> stockMarket) {
 		for (Stock s: market) {
 			makeDecision(s);
