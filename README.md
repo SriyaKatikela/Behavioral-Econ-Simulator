@@ -133,8 +133,5 @@ This simulator is perfect for:
 
 ---
 
-## ▶️ Running the Simulation
-
-```bash
-javac *.java
-java Simulator
+## 📄 License
+MIT License — open-source and available for educational or non-commercial use.
