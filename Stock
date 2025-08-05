@@ -25,7 +25,7 @@ public class Stock {
 
 	@Override
 	public String toString() {
-		return name + "at $" + String.format("%.2f", price);
+		return name + " at $" + String.format("%.2f", price);
 	}
 
 	public ArrayList<Double> getPriceHistory() {
