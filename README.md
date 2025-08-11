@@ -1,5 +1,5 @@
 # Behavioral-Econ-Simulator
-
+### Repository URL: https://github.com/SriyaKatikela/Behavioral-Econ-Simulator
 ## 🌍 Overview
 
 The Behavioral Economics Simulator models the decisions of agents (consumers/investors) influenced by psychological biases in a dynamic, simplified market environment. It challenges traditional rational-choice theory by integrating behavioral economic principles into the logic of decision-making.
