@@ -272,3 +272,6 @@ This simulator is perfect for:
 
 ## 📄 License
 MIT License — open-source and available for educational or non-commercial use.
+
+---
+README generated with the assistance of AI (ChatGPT) to enhance clarity and structure.
