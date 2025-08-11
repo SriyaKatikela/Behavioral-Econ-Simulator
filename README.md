@@ -107,6 +107,71 @@ The **Portfolio** is the part of the simulation that keeps track of what an agen
 
 ---
 
+## **Daily Simulation Loop**
+For **N simulated days**, the following steps repeat:
+
+#### a. **Update Stock Prices**
+- For each stock:
+  - Apply a random price change based on volatility.
+  - Store this new price in history.
+
+#### b. **Agents Analyze the Market**
+- Each agent reviews each stock.
+- They calculate a **confidence score** using:
+  - Recent price change.
+  - Loss aversion and overconfidence adjustments.
+  - Risk tolerance.
+  - Market sentiment (currently randomized).
+  - Random emotional noise.
+
+#### c. **Agents Decide What to Do**
+- **Confidence > 0.6** → Buy.
+- **Confidence < 0.4** → Sell.
+- Otherwise → Hold.
+
+#### d. **Agents Act**
+- **Buy**:
+  - Determine how many shares they can afford and are willing to risk.
+  - Deduct cash, add shares.
+- **Sell**:
+  - Sell some or all shares depending on confidence and loss aversion.
+  - Add cash from sale.
+- **Hold**:
+  - Do nothing for that stock today.
+
+#### e. **Record Results**
+- Update portfolios with new values.
+- Calculate total portfolio value = cash + stock value.
+- Optionally print:
+  - Market prices.
+  - Agents’ daily gains/losses.
+  - Trading decisions.
+
+---
+
+### **End of Simulation**
+- Print final results:
+  - Rankings of agents by total portfolio value.
+  - Market trends over the period.
+  - Observations on how different biases affected outcomes.
+
+---
+
+## Example Stock Data:
+### Format: Stock Ticker, Price, Volatility
+- AAPL,197.82,0.012
+- TSLA,244.14,0.035
+- AMZN,132.54,0.018
+- NFLX,449.78,0.026
+- JPM,155.91,0.011
+- GOOGL,131.67,0.015
+- MSFT,417.89,0.013
+- NVDA,121.22,0.034
+- META,316.11,0.020
+- BA,176.41,0.022
+
+---
+
 ## ⚙️ Practical Notes & Suggestions (non-technical)
 - Right now, buy/sell requests are all-or-nothing based on affordability and holdings. To increase realism, you could later:
   - Add transaction fees or taxes.
@@ -118,6 +183,78 @@ The **Portfolio** is the part of the simulation that keeps track of what an agen
 - Add **transaction costs**, **slippage**, and **partial fills** for more realism.
 - Consider making `emotionalNoiseLevel` evolve over time (stress accumulates after losses).
 - Let `overConfidenceBias` or `lossAversionFactor` slowly **adapt** based on past performance (learning/desensitization).
+
+---
+
+## How to Run
+1. Prepare two files:
+   - **stocks.txt**: Stock ticker, price, volatility.
+   - **agents.txt**: List of names (one per line).
+2. Set simulation parameters (number of agents, number of days, starting cash).
+3. Run the program.
+4. Observe market and portfolio changes over time.
+
+
+
+## Output
+At the end, you’ll see:
+- Each agent’s final portfolio value.
+- Stocks that gained or lost the most.
+- How behavioral biases influenced the market.
+
+### Example Output:
+
+'=== Market Status: Day 1 of 3 ===
+
+STOCK     | PRICE     | Δ%     | VOL%
+----------------------------------------
+AAPL      | $197.08   | 0.0  | 0.01
+
+
+TSLA      | $237.59   | -3.0  | 0.04
+
+
+AMZN      | $133.88   | +1.0  | 0.02
+
+
+NFLX      | $453.38   | +1.0  | 0.03
+
+
+JPM      | $154.76   | -1.0  | 0.01
+
+
+GOOGL      | $131.12   | 0.0  | 0.02
+
+
+MSFT      | $422.81   | +1.0  | 0.01
+
+
+NVDA      | $121.09   | 0.0  | 0.03
+
+
+META      | $313.7   | -1.0  | 0.02
+
+
+BA      | $176.19   | 0.0  | 0.02
+
+
+Top Gains: AMZN (+0.01%), NFLX (+0.01%), MSFT (+0.01%)
+Top Losses: TSLA (-0.03%), META (-0.01%), JPM (-0.01%)
+
+AGENT DECISIONS AND SUMMARIES:
+
+Bob:
+   - Cash: $12585.52  | Portfolio: $20720.29
+   - NVDA: BUY (Confidence: 0.87 | Positive trend detected)
+   - BA: HOLD (Confidence: 0.60 | Market uncertrain, holding position)
+   - AMZN: SELL (Confidence: -0.03 | Negative sentiment / Loss aversion triggered)
+   - NFLX: BUY (Confidence: 0.70 | Positive trend detected)
+   - META: HOLD (Confidence: 0.56 | Market uncertrain, holding position)
+   - TSLA: BUY (Confidence: 1.06 | Positive trend detected)
+   - MSFT: BUY (Confidence: 0.71 | Positive trend detected)
+   - GOOGL: SELL (Confidence: 0.25 | Negative sentiment / Loss aversion triggered)
+   - AAPL: SELL (Confidence: 0.09 | Negative sentiment / Loss aversion triggered)
+   - JPM: SELL (Confidence: 0.10 | Negative sentiment / Loss aversion triggered)
 
 ---
 
