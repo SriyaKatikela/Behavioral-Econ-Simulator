@@ -25,7 +25,7 @@ public class Simulator {
 			double initialCash = minCash + (Math.random() * (maxCash-minCash));
 			initialCash = (Math.round(initialCash) * 100) / 100;  // rounds to 2 decimal places
 			Portfolio p = new Portfolio(initialCash);	
-			loadAgentsFromFile(p, "src/Names");
+			loadAgentsFromFile(p, "src/names");
 		}
 		stockPrices = new HashMap<>();
 		for (Stock s: market) {
